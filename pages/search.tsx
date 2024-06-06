@@ -127,7 +127,7 @@ const SearchPage = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gray-200">
-                                        <th className="py-2 px-4 text-left" colSpan="2">Matic</th>
+                                        <th className="py-2 px-4 text-left" colSpan={Number("2")}>Matic</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -137,7 +137,7 @@ const SearchPage = () => {
                                 </tbody>
                                 <thead>
                                     <tr className="bg-gray-200">
-                                        <th className="py-2 px-4 text-left" colSpan="2">TTJP</th>
+                                        <th className="py-2 px-4 text-left" colSpan={Number("2")}>TTJP</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -214,13 +214,13 @@ const SearchPage = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gray-200">
-                                        <th className="py-2 px-4 text-left" colSpan="3">ERC-721</th>
+                                        <th className="py-2 px-4 text-left" colSpan={Number("3")}>ERC-721</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Contract Address</td><td className="py-2 px-4" colSpan="2">0x296F5c137b89407762E60</td></tr>
+                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Contract Address</td><td className="py-2 px-4" colSpan={Number("2")}>0x296F5c137b89407762E60</td></tr>
                                     <tr>
-                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan="3">NFT1</td>
+                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={Number("3")}>NFT1</td>
                                         <td className="py-2 px-4 font-semibold">Token ID</td>
                                         <td className="py-2 px-4">2</td>
                                     </tr>
@@ -233,7 +233,7 @@ const SearchPage = () => {
                                         <td className="py-2 px-4">Challenger</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan="3">NFT2</td>
+                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={Number("3")}>NFT2</td>
                                         <td className="py-2 px-4 font-semibold">Token ID</td>
                                         <td className="py-2 px-4">0</td>
                                     </tr>
@@ -279,13 +279,13 @@ const SearchPage = () => {
                                 </tbody>
                                 <thead>
                                     <tr className="bg-gray-200">
-                                        <th className="py-2 px-4 text-left" colSpan="3">ERC-721</th>
+                                        <th className="py-2 px-4 text-left" colSpan={Number("3")}>ERC-721</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Contract Address</td><td className="py-2 px-4" colSpan="2">0x296F5c137b89407762E60</td></tr>
+                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Contract Address</td><td className="py-2 px-4" colSpan={Number("2")}>0x296F5c137b89407762E60</td></tr>
                                     <tr>
-                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan="2">NFT1</td>
+                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={Number("2")}>NFT1</td>
                                         <td className="py-2 px-4 font-semibold">Token ID</td>
                                         <td className="py-2 px-4">2</td>
                                     </tr>
@@ -294,7 +294,7 @@ const SearchPage = () => {
                                         <td className="py-2 px-4">Challenger</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan="3">NFT2</td>
+                                        <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={Number("3")}>NFT2</td>
                                         <td className="py-2 px-4 font-semibold">Token ID</td>
                                         <td className="py-2 px-4">0</td>
                                     </tr>

@@ -98,7 +98,8 @@ const SearchPage = () => {
               </div>
               <div className="flex justify-between">
                 <span>Achievement Ratio</span>
-                <span>0%</              </div>
+                <span>0%</span>
+              </div>
               <div className="flex justify-between">
                 <span>Give up</span>
                 <span>Yes (1)</span>
@@ -126,7 +127,7 @@ const SearchPage = () => {
         </div>
       </main>
     </div>
-  );
-};
+  )
+}
 
 export default SearchPage;
