@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Sử dụng rem cho kích thước font chữ và padding/margin */
+body {
+  font-size: 16px;
+}
+
+/* Sử dụng flexbox để bố trí các thành phần */
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.item {
+  flex: 0 0 calc(50% - 1rem);
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f0f0f0;
+}
+
+/* Media queries để điều chỉnh giao diện trên màn hình nhỏ */
+@media (max-width: 768px) {
+  .item {
+    flex: 0 0 100%;
+  }
+}
