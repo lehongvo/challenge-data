@@ -10,14 +10,22 @@
   },
   "dependencies": {
     "add": "^2.0.6",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "ethers": "5.7.2",
+    "flowbite": "^2.3.0",
+    "flowbite-react": "^0.9.0",
+    "lodash": "^4.17.21",
     "next": "14.2.3",
+    "numeral": "^2.0.6",
     "qrcode.react": "^3.1.0",
-    "react": "^18",
+    "react": "^18.0.0",
     "react-dom": "^18",
     "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/numeral": "^2.0.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.19",
