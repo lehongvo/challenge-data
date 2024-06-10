@@ -7,6 +7,18 @@ import ActAPC from '../utils/apiPrepare';
 import numeral from 'numeral';
 import ABI from '../utils/abiContract';
 
+interface IGetListNftData {
+    contractAddress: string;
+    symbol: string;
+    balance: number;
+    listIndex: any[];
+}
+
+interface ReceiveData {
+    percent: number;
+    address: string;
+}
+
 interface Challenger {
     address: string;
     username: string;
@@ -21,8 +33,12 @@ interface Challenger {
     dailySteps: any,
     generateNft: Boolean,
     giveUp: Boolean,
-    arrayContainReward: any
+    arrayContainReward: any,
+    getListNftData: IGetListNftData[],
+    receiveSuccess: ReceiveData[],
+    receiveFail: ReceiveData[],
 }
+
 
 const SearchPage = () => {
     const DefaultQrValue = '0x7F7e7Dd043DD7A70efed5c3f4C329180Fa9C3b95';
@@ -173,7 +189,45 @@ const SearchPage = () => {
             ],
             generateNft: true,
             giveUp: false,
-            arrayContainReward: []
+            arrayContainReward: [
+                {
+                    "symbol": "MATIC",
+                    "before": 1,
+                    "after": 0,
+                },
+                {
+                    "symbol": "MATIC",
+                    "before": 1,
+                    "after": 0,
+                }
+            ],
+            getListNftData: [
+                {
+                    contractAddress: "0x296F5c137b89407762E602c82137196c603EF4",
+                    symbol: "MATIC",
+                    balance: 1,
+                    listIndex: []
+                },
+                {
+                    contractAddress: "0x296F5c137b89407762E602c82137196c603EF4",
+                    symbol: "MATIC",
+                    balance: 1,
+                    listIndex: []
+                }
+            ],
+            receiveSuccess: [
+                {
+                    percent: 100,
+                    address: "0x296F5c137b89407762E602c82137196c603EF4"
+                }
+            ],
+            receiveFail: [
+                {
+                    percent: 100,
+                    address: "0x27d3969a77FDde1c503d5296b6dF101a785d214B"
+                }
+            ]
+            
         }
     );
     const [selectedNetwork, setSelectedNetwork] = useState(DefaultNetwork);
@@ -209,10 +263,11 @@ const SearchPage = () => {
 
             setIsLoading(true)
 
-            const [challengeStatus, objectData] = await Promise.all(
+            const [challengeStatus, objectData, listNftData] = await Promise.all(
                 [
-                    ActAPC.getStatusChallenge(query.toString(), provider),
-                    ActAPC.PrepareApi(query.toString(), Number(networkData.id))
+                    ActAPC.GetStatusChallenge(query.toString(), provider),
+                    ActAPC.PrepareApi(query.toString(), Number(networkData.id)),
+                    ActAPC.GetListNftData(query.toString(), provider)
                 ]
             )
 
@@ -227,26 +282,48 @@ const SearchPage = () => {
                     networkData.RPC,
                     query.toString()
                 );
-            let arrayContainRewardVal
+            let arrayContainRewardVal = [];
             if ('coinBefore' in historyTokenAndCoin && 'coinAfter' in historyTokenAndCoin) {
-                arrayContainRewardVal = [
-                    {
-                        "symbol": networkData.symbol,
-                        "before": historyTokenAndCoin.coinBefore!,
-                        "after": historyTokenAndCoin.coinAfter,
-                    }
-                ];
-
+                if(Number(historyTokenAndCoin.coinAfter) + Number(historyTokenAndCoin.coinBefore!) > 0) {
+                    arrayContainRewardVal.push(
+                        {
+                            "symbol": networkData.symbol,
+                            "before": historyTokenAndCoin.coinBefore!,
+                            "after": historyTokenAndCoin.coinAfter,
+                        }
+                    )
+                }
+                
                 historyTokenAndCoin.listTokenAfter.forEach((item: any, i: number) => {
-                    arrayContainRewardVal.push({
-                        "symbol": item.name,
-                        "before": historyTokenAndCoin.listTokenBefore[i].value,
-                        "after": item.value,
-                    })
+                    if(Number(item.value) + Number(historyTokenAndCoin.listTokenBefore[i].value) > 0) {
+                        arrayContainRewardVal.push({
+                            "symbol": item.name,
+                            "before": historyTokenAndCoin.listTokenBefore[i].value,
+                            "after": item.value,
+                        })
+                    } 
                 })
             }
 
-            console.log("arrayContainRewardVal", arrayContainRewardVal)
+            let totalPercent: number = 0;
+            let listDataSuccess: ReceiveData[] = [];
+            let listDataFailed: ReceiveData[] = [];
+            objectData.data.receivers.forEach((item: any) => {
+                totalPercent += Number(item.percent);
+                const singleData: ReceiveData = {
+                        percent: Number(item.percent),
+                        address: item.address
+                }
+                if (totalPercent <= 100) {
+                    listDataSuccess.push(singleData)
+                } else {
+                    listDataFailed.push(singleData)
+                }
+            })
+            console.log("listDataSuccess", listDataSuccess)
+            console.log("listDataFailed", listDataFailed)
+
+
 
             setQuery(query.toString())
             setValue(
@@ -264,11 +341,13 @@ const SearchPage = () => {
                     dailySteps: objectData.data.daily_steps,
                     generateNft: objectData.data.generate_nft == 1 ? true : false,
                     giveUp: objectData.data.give_up == 1 ? true : false,
-                    arrayContainReward: arrayContainRewardVal
+                    arrayContainReward: arrayContainRewardVal,
+                    getListNftData: listNftData,
+                    receiveSuccess: [],
+                    receiveFail: []
                 }
             );
 
-            console.log("value", value.arrayContainReward);
             setIsLoading(false)
         } catch (error) {
             console.log("error", error)
@@ -461,7 +540,7 @@ const SearchPage = () => {
                                 <tbody>
                                     {
                                         value.dailySteps.map((item: any, index: number) => (
-                                            <tr><td className="py-2 px-4 text-center">{formatTimestamp(item.timestamp)}</td><td className="py-2 px-4 text-center">{numeral(item.step).format('0,0')} steps</td></tr>
+                                            <tr  key={index}><td className="py-2 px-4 text-center">{formatTimestamp(item.timestamp)}</td><td className="py-2 px-4 text-center">{numeral(item.step).format('0,0')} steps</td></tr>
                                         ))
                                     }
                                 </tbody>
@@ -476,22 +555,19 @@ const SearchPage = () => {
                             <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Deposit (Coin/ERC-20)</h2>
                             <table className="w-full">
                                 {value.arrayContainReward.map((item: any, index: number) => (
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left" colSpan={Number("2")}>{item.symbol}</th>
-                                        </tr>
-                                    </thead>
+                                    <>
+                                        <thead>
+                                            <tr className="bg-gray-200">
+                                                <th className="py-2 px-4 text-left" colSpan={Number("2")}>{item.symbol}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td className="py-2 px-4 font-semibold bg-gray-100">Initial</td><td className="py-2 px-4">{item.before} {item.symbol}</td></tr>
+                                            <tr><td className="py-2 px-4 font-semibold bg-gray-100">Additional</td><td className="py-2 px-4">{item.after} {item.symbol}</td></tr>
+                                            <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">{item.after + item.before} {item.symbol}</td></tr>
+                                        </tbody>
+                                    </>
                                 ))}
-                                <thead>
-                                    <tr className="bg-gray-200">
-                                        <th className="py-2 px-4 text-left" colSpan={Number("2")}>Matic</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Initial</td><td className="py-2 px-4">5 Matic</td></tr>
-                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Additional</td><td className="py-2 px-4">5 Matic</td></tr>
-                                    <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">10 Matic</td></tr>
-                                </tbody>
                             </table>
                         </div>
 
@@ -499,30 +575,26 @@ const SearchPage = () => {
                             <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Dividend (Success)</h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left">Address</th>
-                                            <th className="py-2 px-4 text-left">Percentage</th>
-                                            <th className="py-2 px-4 text-left">Matic</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
-                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 Matic</td></tr>
-                                    </tbody>
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left">Address</th>
-                                            <th className="py-2 px-4 text-left">Percentage</th>
-                                            <th className="py-2 px-4 text-left">TTJP</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">50 TTJP</td></tr>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">50 TTJP</td></tr>
-                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 TTJP</td></tr>
-                                    </tbody>
+                                {value.arrayContainReward.map((item: any, index: number) => (
+                                    <>
+                                        <thead>
+                                            <tr className="bg-gray-200">
+                                                <th className="py-2 px-4 text-left">Address</th>
+                                                <th className="py-2 px-4 text-left">Percentage</th>
+                                                <th className="py-2 px-4 text-left">Symbol</th>
+                                            </tr>
+                                        </thead>
+                                         {/* value = 0;
+                                        {value.receiveData.map((item: any, index: number) => (
+                                            value += item.percent
+                                            if(value <= 100)
+                                            <tbody>
+                                                <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
+                                            </tbody> 
+                                        ))}
+                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 Matic</td></tr> */}
+                                    </>
+                                ))}
                                 </table>
                             </div>
                         </div>
@@ -569,38 +641,28 @@ const SearchPage = () => {
                                             <th className="py-2 px-4 text-left" colSpan={3}>ERC-721</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td className="py-2 px-4 font-semibold bg-gray-100">Contract Address</td>
-                                            <td className="py-2 px-4 whitespace-nowrap" colSpan={2}>0x296F5c137b89407762E602c82137196c603EF4</td>
-                                        </tr>
-                                        <tr>
-                                            <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={3}>NFT1</td>
-                                            <td className="py-2 px-4 font-semibold">Token ID</td>
-                                            <td className="py-2 px-4">2</td>
-                                        </tr>
-                                        <tr className="bg-gray-100">
-                                            <td className="py-2 px-4 font-semibold">Number of NFT</td>
-                                            <td className="py-2 px-4">2</td>
-                                        </tr>
-                                        <tr>
-                                            <td className="py-2 px-4 font-semibold">Destination</td>
-                                            <td className="py-2 px-4">Challenger</td>
-                                        </tr>
-                                        <tr>
-                                            <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={3}>NFT2</td>
-                                            <td className="py-2 px-4 font-semibold">Token ID</td>
-                                            <td className="py-2 px-4">0</td>
-                                        </tr>
-                                        <tr className="bg-gray-100">
-                                            <td className="py-2 px-4 font-semibold">Number of NFT</td>
-                                            <td className="py-2 px-4">2</td>
-                                        </tr>
-                                        <tr>
-                                            <td className="py-2 px-4 font-semibold">Destination</td>
-                                            <td className="py-2 px-4">Challenger</td>
-                                        </tr>
-                                    </tbody>
+                                
+                                    {value.getListNftData.map((item: any, index: number) => (
+                                        <tbody key={index}>
+                                            <tr>
+                                                <td className="py-2 px-4 font-semibold bg-gray-100">Collection</td>
+                                                <td className="py-2 px-4 whitespace-nowrap" colSpan={2}>{item.contractAddress}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={3}>{item.symbol}</td>
+                                                <td className="py-2 px-4 font-semibold">Token ID</td>
+                                                <td className="py-2 px-4">{item.listIndex.length > 0 ? item.listIndex : "None"}</td>
+                                            </tr>
+                                            <tr className="bg-gray-100">
+                                                <td className="py-2 px-4 font-semibold">Number of NFT</td>
+                                                <td className="py-2 px-4">{item.balance} NFT</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 px-4 font-semibold">Destination</td>
+                                                <td className="py-2 px-4">Challenger</td>
+                                            </tr>
+                                        </tbody>
+                                    ))}
                                 </table>
                             </div>
                         </div>
@@ -724,7 +786,7 @@ const SearchPage = () => {
                                         className="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-2"
                                         onClick={hideModal}
                                     >
-                                        Yes, I'm sure and re-check
+                                        Yes, I&apos;m sure and re-check
                                     </button>
 
                                 </div>

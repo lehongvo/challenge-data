@@ -50,8 +50,6 @@ const getHistoryTokenAndCoin = async (
     let listBalance = historyBalance.slice(0, historyBalance.length - 1)
     const listTokenName = _.flatten(historyBalance.slice(-1))
 
-    console.log("listBalance", listBalance)
-
     listBalance = listBalance.map((balance: any) => {
         if (isMappable(balance)) {
             balance = balance.map((price: any) => Number(price.toString()));
@@ -343,7 +341,7 @@ const PrepareApi = async (address: string, idNetwork: number) => {
     }
 };
 
-const getStatusChallenge = async (challengeContractAddress: string, provider: any) => {
+const GetStatusChallenge = async (challengeContractAddress: string, provider: any) => {
     try {
         const challengeContract = new ethers.Contract(
             challengeContractAddress,
@@ -353,13 +351,89 @@ const getStatusChallenge = async (challengeContractAddress: string, provider: an
         const isFinished = await challengeContract.isFinished();
         return isFinished;
     } catch (error) {
+        console.log(error);
         let errorMessage = "Something went wrong";
     }
 }
+
+interface IGetListNftData {
+    contractAddress: string;
+    symbol: string;
+    balance: number;
+    listIndex: any[];
+}
+
+const GetListNftData = async (challengeContractAddress: string, provider: any): Promise<IGetListNftData[]> => {
+    try {
+        const challengeContract = new ethers.Contract(
+            challengeContractAddress,
+            ABI.challengeABI,
+            provider
+        );
+
+        const nftAddress = await challengeContract.erc721Address(0);
+
+        const nftContract = new ethers.Contract(
+            nftAddress,
+            ABI.exerciseSupplementNFTAddressABI,
+            provider
+        );
+
+        const nftListAddress = await nftContract.getNftListAddress();
+        let nftData: IGetListNftData[] = [];
+
+        const promises = nftListAddress.map(async (item: any, index: number) => {
+            const nft = new ethers.Contract(
+                item,
+                ABI.exerciseSupplementNFTABI,
+                provider
+            );
+
+            const [symbol, balance, nextTokenIdToMint] = await Promise.all([
+                nft.symbol(),
+                nft.balanceOf(challengeContractAddress),
+                nft.nextTokenIdToMint()
+            ]);
+
+            let listIndex: number[] = [];
+
+            if (balance != 0) {
+                for (let i = 0; i < nextTokenIdToMint; i++) {
+                    try {
+                        const owner = await nft.ownerOf(i);
+                        if ((owner.toString()).toUpperCase() === (challengeContractAddress.toString()).toUpperCase()) {
+                            listIndex.push(i);
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                }
+            }
+
+            nftData.push({
+                contractAddress: item.toString(),
+                symbol: symbol.toString(),
+                balance: Number(balance),
+                listIndex
+            });
+        });
+
+        await Promise.all(promises);
+
+        console.log("nftData", nftData);
+
+        return nftData;
+    } catch (error) {
+        console.log(error);
+        throw new Error("Something went wrong");
+    }
+}
+
 
 export default {
     PrepareApi,
     getHistoryTokenAndCoin,
     scanHistoryChallenge,
-    getStatusChallenge
+    GetStatusChallenge,
+    GetListNftData
 };
