@@ -363,6 +363,11 @@ interface IGetListNftData {
     listIndex: any[];
 }
 
+interface IGetStatusChallenger {
+    message: string;
+    status: Number
+}
+
 const GetListNftData = async (challengeContractAddress: string, provider: any): Promise<IGetListNftData[]> => {
     try {
         const challengeContract = new ethers.Contract(
@@ -429,11 +434,54 @@ const GetListNftData = async (challengeContractAddress: string, provider: any): 
     }
 }
 
+const GetStatusChallenger = async (challengeContractAddress: string, provider: any): Promise<IGetStatusChallenger> => {
+    try {
+        const challengeContract = new ethers.Contract(
+            challengeContractAddress,
+            ABI.challengeABI,
+            provider
+        );
+        const [endTime, isFinished, isSuccess] = await Promise.all([
+            challengeContract.endTime(),
+            challengeContract.isFinished(),
+            challengeContract.isSuccess()  
+        ])
+        if(isSuccess && isFinished) {
+            return {
+                message: "Successful",
+                status: 1
+            }
+        }
+
+        if(!isSuccess && isFinished) {
+            return {
+                message: "Failed",
+                status: 2
+            }
+        }
+
+        if(endTime < Date.now() / 1000 ) {
+            return {
+                message: "Expire but not send yet",
+                status: 3
+            }
+        }
+
+        return {
+            message: "Predict results",
+            status: 4
+        }
+    } catch (error) {
+        console.log(error);
+        throw new Error("Something went wrong");
+    }
+}
 
 export default {
     PrepareApi,
     getHistoryTokenAndCoin,
     scanHistoryChallenge,
     GetStatusChallenge,
-    GetListNftData
+    GetListNftData,
+    GetStatusChallenger
 };

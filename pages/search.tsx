@@ -14,6 +14,11 @@ interface IGetListNftData {
     listIndex: any[];
 }
 
+interface IGetStatusChallenger {
+    message: string;
+    status: Number
+}
+
 interface ReceiveData {
     percent: number;
     address: string;
@@ -37,6 +42,8 @@ interface Challenger {
     getListNftData: IGetListNftData[],
     receiveSuccess: ReceiveData[],
     receiveFail: ReceiveData[],
+    totalPercent: Number,
+    statusChallenger: IGetStatusChallenger
 }
 
 
@@ -226,8 +233,12 @@ const SearchPage = () => {
                     percent: 100,
                     address: "0x27d3969a77FDde1c503d5296b6dF101a785d214B"
                 }
-            ]
-            
+            ],
+            totalPercent: 100,
+            statusChallenger: {
+                message: "Predict results",
+                status: 4
+            }
         }
     );
     const [selectedNetwork, setSelectedNetwork] = useState(DefaultNetwork);
@@ -238,6 +249,7 @@ const SearchPage = () => {
     const handleSearch = async (e: any) => {
         try {
             e.preventDefault();
+            console.log("---------91")
 
             if (query.length <= 0) {
                 setIsOpen(true);
@@ -263,11 +275,12 @@ const SearchPage = () => {
 
             setIsLoading(true)
 
-            const [challengeStatus, objectData, listNftData] = await Promise.all(
+            const [challengeStatus, objectData, listNftData, statusChallenger] = await Promise.all(
                 [
                     ActAPC.GetStatusChallenge(query.toString(), provider),
                     ActAPC.PrepareApi(query.toString(), Number(networkData.id)),
-                    ActAPC.GetListNftData(query.toString(), provider)
+                    ActAPC.GetListNftData(query.toString(), provider),
+                    ActAPC.GetStatusChallenger(query.toString(), provider)
                 ]
             )
 
@@ -320,10 +333,6 @@ const SearchPage = () => {
                     listDataFailed.push(singleData)
                 }
             })
-            console.log("listDataSuccess", listDataSuccess)
-            console.log("listDataFailed", listDataFailed)
-
-
 
             setQuery(query.toString())
             setValue(
@@ -343,8 +352,10 @@ const SearchPage = () => {
                     giveUp: objectData.data.give_up == 1 ? true : false,
                     arrayContainReward: arrayContainRewardVal,
                     getListNftData: listNftData,
-                    receiveSuccess: [],
-                    receiveFail: []
+                    receiveSuccess: listDataSuccess,
+                    receiveFail: listDataFailed,
+                    totalPercent,
+                    statusChallenger: statusChallenger
                 }
             );
 
@@ -514,7 +525,7 @@ const SearchPage = () => {
                                     <tr><td className="py-2 px-4 font-semibold">Contract Address</td><td className="py-2 px-4 truncate">{value.challengeAddress}</td></tr>
                                     <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Sponsor</td><td className="py-2 px-4 truncate">{value.sponsorAddress}</td></tr>
                                     <tr><td className="py-2 px-4 font-semibold">Challenger</td><td className="py-2 px-4 truncate">{value.address}</td></tr>
-                                    <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Status</td><td className="py-2 px-4">{checkTime(value.startTime, value.endTime) ? "Not Finished" : "Finished"}</td></tr>
+                                    <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Status</td><td className="py-2 px-4">{checkTime(value.startTime, value.endTime) ? "Not Finished" : (value.startTime > Math.ceil(new Date().getTime() / 1000) ? "Not Started" : "Finished")}</td></tr>
                                     <tr><td className="py-2 px-4 font-semibold">Challenge Start</td><td className="py-2 px-4">{formatTimestamp(value.startTime)}</td></tr>
                                     <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Challenge End</td><td className="py-2 px-4">{formatTimestamp(value.endTime)}</td></tr>
                                     <tr><td className="py-2 px-4 font-semibold">Challenge days</td><td className="py-2 px-4">{value.challengeDays.toString()} days</td></tr>
@@ -584,15 +595,12 @@ const SearchPage = () => {
                                                 <th className="py-2 px-4 text-left">Symbol</th>
                                             </tr>
                                         </thead>
-                                         {/* value = 0;
-                                        {value.receiveData.map((item: any, index: number) => (
-                                            value += item.percent
-                                            if(value <= 100)
-                                            <tbody>
-                                                <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
+                                        {value.receiveSuccess.map((item1: any, index1: number) => (
+                                            <tbody key={index}>
+                                                <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">{item1.address}</td><td className="py-2 px-4">{item1.percent}%</td><td className="py-2 px-4">{Math.round(((item.after + item.before) * item1.percent / 100) * 1000000000000) / 1000000000000} {item.symbol}</td></tr>
                                             </tbody> 
                                         ))}
-                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 Matic</td></tr> */}
+                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">{(+value.totalPercent/2).toString()}%</td><td className="py-2 px-4">{item.after + item.before} {item.symbol}</td></tr>
                                     </>
                                 ))}
                                 </table>
@@ -603,30 +611,23 @@ const SearchPage = () => {
                             <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Dividend (Failure)</h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left">Address</th>
-                                            <th className="py-2 px-4 text-left">Percentage</th>
-                                            <th className="py-2 px-4 text-left">Matic</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">5 Matic</td></tr>
-                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 Matic</td></tr>
-                                    </tbody>
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left">Address</th>
-                                            <th className="py-2 px-4 text-left">Percentage</th>
-                                            <th className="py-2 px-4 text-left">TTJP</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">50 TTJP</td></tr>
-                                        <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">0x4E447D8C63140E281283321FCDA0A603CA125d</td><td className="py-2 px-4">50%</td><td className="py-2 px-4">50 TTJP</td></tr>
-                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">100%</td><td className="py-2 px-4">10 TTJP</td></tr>
-                                    </tbody>
+                                    {value.arrayContainReward.map((item: any, index: number) => (
+                                        <>
+                                            <thead>
+                                                <tr className="bg-gray-200">
+                                                    <th className="py-2 px-4 text-left">Address</th>
+                                                    <th className="py-2 px-4 text-left">Percentage</th>
+                                                    <th className="py-2 px-4 text-left">Symbol</th>
+                                                </tr>
+                                            </thead>
+                                            {value.receiveFail.map((item1: any, index: number) => (
+                                                <tbody key={index}>
+                                                    <tr><td className="py-2 px-4 bg-gray-100 whitespace-nowrap">{item1.address}</td><td className="py-2 px-4">{item1.percent}%</td><td className="py-2 px-4">{Math.round(((item.after + item.before) * item1.percent / 100) * 1000000000000) / 1000000000000} {item.symbol}</td></tr>
+                                                </tbody> 
+                                            ))}
+                                            <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">{(+value.totalPercent/2).toString()}%</td><td className="py-2 px-4">{item.after + item.before} {item.symbol}</td></tr>
+                                        </>
+                                    ))}
                                 </table>
                             </div>
                         </div>
@@ -668,12 +669,12 @@ const SearchPage = () => {
                         </div>
 
                         <div className="bg-white p-6 rounded-lg shadow-md mb-4">
-                            <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Result (Success)</h2>
+                            <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Result: {value.statusChallenger.message}</h2>
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="bg-gray-200">
-                                            <th className="py-2 px-4 text-left whitespace-nowrap">Address</th>
+                                            <th className="py-2 px-4 text-lefyat whitespace-nowrap">Address</th>
                                             <th className="py-2 px-4 text-left">Percentage</th>
                                             <th className="py-2 px-4 text-left">Matic</th>
                                         </tr>
@@ -719,6 +720,13 @@ const SearchPage = () => {
                                             <td className="py-2 px-4">10 TTJP</td>
                                         </tr>
                                     </tbody>
+
+
+
+
+
+
+
                                     <thead>
                                         <tr className="bg-gray-200">
                                             <th className="py-2 px-4 text-left whitespace-nowrap" colSpan={3}>ERC-721</th>
