@@ -368,6 +368,53 @@ interface IGetStatusChallenger {
     status: Number
 }
 
+interface IGetNftResult {
+    contractAddress: string;
+    symbol: string;
+    nftId: number;
+}
+
+const EtmNftData = async (challengeContractAddress: string, provider: any): Promise<IGetNftResult[]> => {
+    try {
+        const challengeContract = new ethers.Contract(
+            challengeContractAddress,
+            ABI.challengeABI,
+            provider
+        );
+        const nftAddress = await challengeContract.erc721Address(0);
+
+        const nftContract = new ethers.Contract(
+            nftAddress,
+            ABI.exerciseSupplementNFTAddressABI,
+            provider
+        );
+        const nftListAddress = await nftContract.getSpecialNftAddress();
+
+        const data: IGetNftResult[] = await Promise.all(nftListAddress.map(async (item: any) => {
+            const nft = new ethers.Contract(
+                item,
+                ABI.exerciseSupplementNFTABI,
+                provider
+            );
+            const [symbol, nftId] = await Promise.all([
+                nft.symbol(),
+                nft.nextTokenIdToMint()
+            ]);
+            return {
+                contractAddress: item.toString(),
+                symbol: symbol,
+                nftId: nftId.toString(),
+            };
+        }));
+
+        console.log("nftData", data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching NFT data:", error);
+        throw new Error("Something went wrong while fetching NFT data");
+    }
+};
+
 const GetListNftData = async (challengeContractAddress: string, provider: any): Promise<IGetListNftData[]> => {
     try {
         const challengeContract = new ethers.Contract(
@@ -424,9 +471,6 @@ const GetListNftData = async (challengeContractAddress: string, provider: any): 
         });
 
         await Promise.all(promises);
-
-        console.log("nftData", nftData);
-
         return nftData;
     } catch (error) {
         console.log(error);
@@ -444,23 +488,23 @@ const GetStatusChallenger = async (challengeContractAddress: string, provider: a
         const [endTime, isFinished, isSuccess] = await Promise.all([
             challengeContract.endTime(),
             challengeContract.isFinished(),
-            challengeContract.isSuccess()  
+            challengeContract.isSuccess()
         ])
-        if(isSuccess && isFinished) {
+        if (isSuccess && isFinished) {
             return {
                 message: "Successful",
                 status: 1
             }
         }
 
-        if(!isSuccess && isFinished) {
+        if (!isSuccess && isFinished) {
             return {
                 message: "Failed",
                 status: 2
             }
         }
 
-        if(endTime < Date.now() / 1000 ) {
+        if (endTime < Date.now() / 1000) {
             return {
                 message: "Expire but not send yet",
                 status: 3
@@ -483,5 +527,6 @@ export default {
     scanHistoryChallenge,
     GetStatusChallenge,
     GetListNftData,
-    GetStatusChallenger
+    GetStatusChallenger,
+    EtmNftData
 };

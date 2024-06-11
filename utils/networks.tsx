@@ -17,7 +17,7 @@ const Networks = [
     },
     {
         "name": "Polygon Mainnet",
-        "RPC": "https://polygon.drpc.org",
+        "RPC": "https://polygon-rpc.com",
         "chainId": 137,
         "symbol": "MATIC",
         "id": 5,
