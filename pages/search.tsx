@@ -8,6 +8,7 @@ import numeral from 'numeral';
 import ABI from '../utils/abiContract';
 import dataExport from '../config';
 import axios from 'axios';
+import Languages from '../utils/language';
 
 interface IGetListNftData {
     contractAddress: string;
@@ -272,10 +273,20 @@ const SearchPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDetail, setIsDetail] = useState(false);
 
+    const [contentData, setContentData] = useState(Languages.jp);
+
     const setIsDetailPcv = (addressContract: string, networkId: number) => {
         handleSearchDetail(addressContract, networkId);
         setIsDetail(!isDetail);
     };
+
+    const setLangValue = (value: any) => {
+        if (Number(value) == 1) {
+            setContentData(Languages.jp);
+        } else {
+            setContentData(Languages.en);
+        }
+    }
 
     const setIsDetailNormal = () => {
         if (query.length > 0) {
@@ -294,7 +305,7 @@ const SearchPage = () => {
         try {
             if (!ethers.utils.isAddress(addressContract)) {
                 setIsOpen(true);
-                setErrorMessage("Invalid ethereum address");
+                setErrorMessage(contentData.INVALID_ETHEREUM_ADDRESS);
                 return
             }
 
@@ -305,7 +316,7 @@ const SearchPage = () => {
                 const code = await provider.getCode(addressContract);
                 if (code === "0x") {
                     setIsOpen(true);
-                    setErrorMessage("This address is not a contract or wrong network, Please check your network configuration");
+                    setErrorMessage(contentData.WRONG_NETWORK);
                     return
                 }
 
@@ -371,7 +382,7 @@ const SearchPage = () => {
                 })
                 if (addressContract.toString() == query) {
                     setIsOpen(true);
-                    setErrorMessage("Already searched");
+                    setErrorMessage(contentData.ALREADY_RESEARCH);
                     return
                 }
 
@@ -404,7 +415,7 @@ const SearchPage = () => {
                 setIsLoading(false)
             } else {
                 setIsOpen(true);
-                setErrorMessage("Network not found");
+                setErrorMessage(contentData.NETWORK_NOT_FOUND);
                 return
             }
 
@@ -423,13 +434,13 @@ const SearchPage = () => {
 
             if (query.length <= 0) {
                 setIsOpen(true);
-                setErrorMessage("Please enter a valid address");
+                setErrorMessage(contentData.ENTER_ADDRESS);
                 return
             }
 
             if (!ethers.utils.isAddress(query)) {
                 setIsOpen(true);
-                setErrorMessage("Invalid ethereum address");
+                setErrorMessage(contentData.INVALID_ETHEREUM_ADDRESS);
                 return
             }
             const networkData = Networks[selectedNetwork];
@@ -439,7 +450,7 @@ const SearchPage = () => {
             const code = await provider.getCode(query);
             if (code === "0x") {
                 setIsOpen(true);
-                setErrorMessage("This address is not a contract or wrong network, Please check your network configuration");
+                setErrorMessage(contentData.WRONG_NETWORK);
                 return
             }
 
@@ -534,10 +545,9 @@ const SearchPage = () => {
 
             setIsLoading(false)
         } catch (error) {
-            console.log("error", error)
             setQuery("")
             setIsOpen(true);
-            setErrorMessage("Something went wrong, Please check your RPC configuration");
+            setErrorMessage(contentData.ERROR_NOT_FOUND);
             setIsLoading(false)
         };
     }
@@ -629,7 +639,7 @@ const SearchPage = () => {
                 isLoading && <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
                     <div className="bg-white rounded-full px-6 py-4 flex items-center space-x-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-4 border-blue-500 border-t-transparent"></div>
-                        <p className="text-gray-700 font-semibold">Loading...</p>
+                        <p className="text-gray-700 font-semibold">{contentData.LOADING}...</p>
                     </div>
                 </div>
             }
@@ -638,18 +648,18 @@ const SearchPage = () => {
                 !isLoadingData && <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
                     <div className="bg-white rounded-full px-6 py-4 flex items-center space-x-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-4 border-blue-500 border-t-transparent"></div>
-                        <p className="text-gray-700 font-semibold">Loading...</p>
+                        <p className="text-gray-700 font-semibold">{contentData.LOADING}...</p>
                     </div>
                 </div>
             }
 
             <div className="w-full flex-col mx-auto p-">
-                <header className="flex w-2/4 my-5 overflow-x-auto justify-between items-center rounded-lg mx-auto">
+                <header className="flex w-4/5 my-5 overflow-x-auto justify-between items-center rounded-lg mx-auto">
                     <div className="w-full">
                         <div className="flex items-center">
                             <input
                                 type="text"
-                                placeholder="Search: Only Challenge Contract Address"
+                                placeholder={contentData.PLACEHOLDER}
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="h-14  text-lg   bg-white shadow-md flex-grow p-1 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:min-w-[300px]"
@@ -673,7 +683,7 @@ const SearchPage = () => {
                                         d="M21 21l-6-6m2-5a7 7 0 10-14 0 7 7 0 0014 0z"
                                     />
                                 </svg>
-                                Search
+                                {contentData.SEARCH}
                             </button>
 
                             <select
@@ -693,8 +703,17 @@ const SearchPage = () => {
                                 onClick={setIsDetailNormal}
                                 className="h-14 text-lg ml-[0.2%] w-40 px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 sm:px-4 sm:py-2 flex items-center justify-center"
                             >
-                                Dashboard
+                                {contentData.DASHBOARD}
                             </button>
+                            <select
+                                className="ml-1 h-14 text-lg px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-orange-700"
+                                onChange={(e) =>
+                                    setLangValue(Number(e.target.value))
+                                }
+                            >
+                                <option key={1} value={1}>JP 🇯🇵</option>
+                                <option key={2} value={2}>EN 🇺🇸</option>
+                            </select>
                         </div>
                     </div>
                 </header>
@@ -717,10 +736,10 @@ const SearchPage = () => {
                                 <table className="w-full">
                                     <thead>
                                         <tr className="bg-gray-200 border-b border-gray-300">
-                                            <th className="py-2 px-4 border-r border-gray-300">Role</th>
-                                            <th className="py-2 px-4 border-r border-gray-300">Name</th>
-                                            <th className="py-2 px-4 border-r border-gray-300">Address</th>
-                                            <th className="py-2 px-4">QR Code</th>
+                                            <th className="py-2 px-4 border-r border-gray-300">{contentData.ROLE}</th>
+                                            <th className="py-2 px-4 border-r border-gray-300">{contentData.NAME}</th>
+                                            <th className="py-2 px-4 border-r border-gray-300">{contentData.ADDRESS}</th>
+                                            <th className="py-2 px-4">{contentData.QR_CODE}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -750,41 +769,41 @@ const SearchPage = () => {
 
                             <div className="flex flex-col md:flex-row w-full mb-10 pt-5">
                                 <div className="bg-white p-6 rounded-lg shadow-md mb-4 md:mb-0 md:mr-4 md:w-1/2">
-                                    <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Challenge Information</h2>
+                                    <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.CHALLENGE_INFORMATION}</h2>
                                     <div className="overflow-x-auto">
                                         <table className="w-full">
                                             <tbody>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Network</td><td className="py-2 px-4">{Networks[selectedNetwork].name}</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">Contract Address</td><td className="py-2 px-4 truncate">{value.challengeAddress}</td></tr>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Sponsor</td><td className="py-2 px-4 truncate">{value.sponsorAddress}</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">Challenger</td><td className="py-2 px-4 truncate">{value.address}</td></tr>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Status</td><td className="py-2 px-4">{checkTime(value.startTime, value.endTime) ? "Not Finished" : (value.startTime > Math.ceil(new Date().getTime() / 1000) ? "Not Started" : "Finished")}</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">Challenge Start</td><td className="py-2 px-4">{formatTimestamp(value.startTime)}</td></tr>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Challenge End</td><td className="py-2 px-4">{formatTimestamp(value.endTime)}</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">Challenge days</td><td className="py-2 px-4">{value.challengeDays.toString()} days</td></tr>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Minimum achievement days</td><td className="py-2 px-4">{value.minimumAchievementDays.toString()} day</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">Achievement Ratio</td><td className="py-2 px-4">{getRatioProcessing(value.dailySteps)}%</td></tr>
-                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">Give up</td><td className="py-2 px-4">{value.giveUp ? "Yes" : "No"} (1)</td></tr>
-                                                <tr><td className="py-2 px-4 font-semibold">NFT</td><td className="py-2 px-4">{value.generateNft ? "Yes" : "No"}</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.NETWORK}</td><td className="py-2 px-4">{Networks[selectedNetwork].name}</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.CONTRACT_ADDRESS}</td><td className="py-2 px-4 truncate">{value.challengeAddress}</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.SPONSOR}</td><td className="py-2 px-4 truncate">{value.sponsorAddress}</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.CHALLENGER}</td><td className="py-2 px-4 truncate">{value.address}</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.STATUS}</td><td className="py-2 px-4">{checkTime(value.startTime, value.endTime) ? contentData.NOT_FINISH : (value.startTime > Math.ceil(new Date().getTime() / 1000) ? contentData.NOT_STARTED : contentData.FINISHED)}</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.CHALLENGE_START}</td><td className="py-2 px-4">{formatTimestamp(value.startTime)}</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.CHALLENGE_END}</td><td className="py-2 px-4">{formatTimestamp(value.endTime)}</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.CHALLENGE_DAYS}</td><td className="py-2 px-4">{value.challengeDays.toString()} {contentData.DAYS}</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.MINIMUM_ACHIEVEMENT_DAYS}</td><td className="py-2 px-4">{value.minimumAchievementDays.toString()} {contentData.DAYS}</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.ACHIEVEMENT_RATIO}</td><td className="py-2 px-4">{getRatioProcessing(value.dailySteps)}%</td></tr>
+                                                <tr className="bg-gray-100"><td className="py-2 px-4 font-semibold">{contentData.GIVE_UP}</td><td className="py-2 px-4">{value.giveUp ? contentData.YES : contentData.NO} (1)</td></tr>
+                                                <tr><td className="py-2 px-4 font-semibold">{contentData.NFT}</td><td className="py-2 px-4">{value.generateNft ? contentData.YES : contentData.NO}</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
 
                                 <div className="bg-white p-6 rounded-lg shadow-md md:w-1/2">
-                                    <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Step Data</h2>
+                                    <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.STEP_DATA}</h2>
                                     <div className="overflow-x-auto">
                                         <table className="w-full">
                                             <thead>
                                                 <tr className="bg-gray-200">
-                                                    <th className="py-2 px-4 text-center">Date</th>
-                                                    <th className="py-2 px-4 text-center">Steps</th>
+                                                    <th className="py-2 px-4 text-center">{contentData.DATE}</th>
+                                                    <th className="py-2 px-4 text-center">{contentData.STEPS}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {
                                                     value.dailySteps.map((item: any, index: number) => (
-                                                        <tr key={index}><td className="py-2 px-4 text-center">{formatTimestamp(item.timestamp)}</td><td className="py-2 px-4 text-center">{numeral(item.step).format('0,0')} steps</td></tr>
+                                                        <tr key={index}><td className="py-2 px-4 text-center">{formatTimestamp(item.timestamp)}</td><td className="py-2 px-4 text-center">{numeral(item.step).format('0,0')} {contentData.STEPS.toLowerCase()}</td></tr>
                                                     ))
                                                 }
                                             </tbody>
@@ -796,19 +815,20 @@ const SearchPage = () => {
                             <div className="flex flex-col overflow-x-auto md:flex-row w-full mb-10 pt-5">
                                 <div className="w-full md:w-1/2 md:pr-2 mb-4 md:mb-0">
                                     <div className="bg-white p-6 rounded-lg shadow-md mb-4">
-                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Deposit (Coin/ERC-20)</h2>
+                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.DEPOSIT_COIN_ERC20}</h2>
                                         <table className="w-full">
                                             {value.arrayContainReward.map((item: any, index: number) => (
                                                 <>
                                                     <thead>
                                                         <tr className="bg-gray-200">
                                                             <th className="py-2 px-4 text-left" colSpan={Number("2")}>{item.symbol}</th>
+                                                            <th className="py-2 px-4 text-left" colSpan={Number("2")}>{contentData.AMOUNT}</th>
                                                         </tr>
-                                                    </thead>
+                                                    </thead >
                                                     <tbody>
-                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Initial</td><td className="py-2 px-4">{item.before} {item.symbol}</td></tr>
-                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Additional</td><td className="py-2 px-4">{item.after} {item.symbol}</td></tr>
-                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">Total</td><td className="py-2 px-4">{item.after + item.before} {item.symbol}</td></tr>
+                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">{contentData.INITIAL}</td><td className="py-2 px-4">{item.before} {item.symbol}</td></tr>
+                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">{contentData.ADDITIONAL}</td><td className="py-2 px-4">{item.after} {item.symbol}</td></tr>
+                                                        <tr><td className="py-2 px-4 font-semibold bg-gray-100">{contentData.TOTAL}</td><td className="py-2 px-4">{item.after + item.before} {item.symbol}</td></tr>
                                                     </tbody>
                                                 </>
                                             ))}
@@ -816,14 +836,14 @@ const SearchPage = () => {
                                     </div>
 
                                     <div className="bg-white p-6 rounded-lg shadow-md mb-4">
-                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Dividend (Success)</h2>
+                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.DIVIDEND_SUCCESS}</h2>
                                         <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
                                                     <tr className="bg-gray-200">
-                                                        <th className="py-2 px-4 text-left">Address</th>
-                                                        <th className="py-2 px-4 text-left">Percentage</th>
-                                                        <th className="py-2 px-4 text-left">Symbol</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.ADDRESS}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.PERCENTAGE}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.SYMBOL}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -837,7 +857,7 @@ const SearchPage = () => {
                                                                 </tr>
                                                             ))}
                                                             <tr>
-                                                                <td className="py-2 px-4 font-semibold bg-gray-100">Total</td>
+                                                                <td className="py-2 px-4 font-semibold bg-gray-100">{contentData.TOTAL}</td>
                                                                 <td className="py-2 px-4">{(+value.totalPercent / 2).toString()}%</td>
                                                                 <td className="py-2 px-4">{item.after + item.before} {item.symbol}</td>
                                                             </tr>
@@ -849,14 +869,14 @@ const SearchPage = () => {
                                     </div>
 
                                     <div className="bg-white p-6 rounded-lg shadow-md">
-                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Dividend (Failure)</h2>
+                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.DIVIDEND_FAILURE}</h2>
                                         <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
                                                     <tr className="bg-gray-200">
-                                                        <th className="py-2 px-4 text-left">Address</th>
-                                                        <th className="py-2 px-4 text-left">Percentage</th>
-                                                        <th className="py-2 px-4 text-left">Symbol</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.ADDRESS}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.PERCENTAGE}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.SYMBOL}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -870,7 +890,7 @@ const SearchPage = () => {
                                                                 </tr>
                                                             ))}
                                                             <tr>
-                                                                <td className="py-2 px-4 font-semibold bg-gray-100">Total</td>
+                                                                <td className="py-2 px-4 font-semibold bg-gray-100">{contentData.TOTAL}</td>
                                                                 <td className="py-2 px-4">{(+value.totalPercent / 2).toString()}%</td>
                                                                 <td className="py-2 px-4">{item.after + item.before} {item.symbol}</td>
                                                             </tr>
@@ -883,7 +903,7 @@ const SearchPage = () => {
                                 </div>
                                 <div className="w-full md:w-1/2 md:pl-2">
                                     <div className="bg-white p-6 rounded-lg shadow-md mb-4">
-                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">Deposit (NFT)</h2>
+                                        <h2 className="text-xl font-bold mb-4 bg-blue-500 text-white p-2 text-center rounded-md">{contentData.DEPOSIT_NFT}</h2>
                                         <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
@@ -895,21 +915,21 @@ const SearchPage = () => {
                                                 {value.getListNftData.map((item: any, index: number) => (
                                                     <tbody key={index}>
                                                         <tr>
-                                                            <td className="py-2 px-4 font-semibold bg-gray-100">Collection</td>
+                                                            <td className="py-2 px-4 font-semibold bg-gray-100">{contentData.COLLECTION}</td>
                                                             <td className="py-2 px-4 whitespace-nowrap" colSpan={2}>{item.contractAddress}</td>
                                                         </tr>
                                                         <tr>
                                                             <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={3}>{item.symbol}</td>
-                                                            <td className="py-2 px-4 font-semibold">Token ID</td>
-                                                            <td className="py-2 px-4">{item.listIndex.length > 0 ? item.listIndex : "None"}</td>
+                                                            <td className="py-2 px-4 font-semibold">{contentData.TOKEN_ID}</td>
+                                                            <td className="py-2 px-4">{item.listIndex.length > 0 ? item.listIndex : contentData.NONE}</td>
                                                         </tr>
                                                         <tr className="bg-gray-100">
-                                                            <td className="py-2 px-4 font-semibold">Number of NFT</td>
-                                                            <td className="py-2 px-4">{item.balance} NFT</td>
+                                                            <td className="py-2 px-4 font-semibold">{contentData.NUMBER_OF_NFT}</td>
+                                                            <td className="py-2 px-4">{item.balance}NFT</td>
                                                         </tr>
                                                         <tr>
-                                                            <td className="py-2 px-4 font-semibold">Destination</td>
-                                                            <td className="py-2 px-4">Challenger</td>
+                                                            <td className="py-2 px-4 font-semibold">{contentData.DESTINATION}</td>
+                                                            <td className="py-2 px-4">{contentData.CHALLENGER}</td>
                                                         </tr>
                                                     </tbody>
                                                 ))}
@@ -923,9 +943,9 @@ const SearchPage = () => {
                                             <table className="w-full">
                                                 <thead>
                                                     <tr className="bg-gray-200">
-                                                        <th className="py-2 px-4 text-left">Address</th>
-                                                        <th className="py-2 px-4 text-left">Percentage</th>
-                                                        <th className="py-2 px-4 text-left">Symbol</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.ADDRESS}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.PERCENTAGE}</th>
+                                                        <th className="py-2 px-4 text-left">{contentData.STEP_DATA}</th>
                                                     </tr>
                                                 </thead>
 
@@ -941,7 +961,7 @@ const SearchPage = () => {
                                                                     </tr>
                                                                 ))}
                                                                 <tr>
-                                                                    <td className="py-2 px-4 font-semibold bg-gray-100">Total</td>
+                                                                    <td className="py-2 px-4 font-semibold bg-gray-100">{contentData.TOTAL}</td>
                                                                     <td className="py-2 px-4">{(+value.totalPercent / 2).toString()}%</td>
                                                                     <td className="py-2 px-4">{item.after + item.before} {item.symbol}</td>
                                                                 </tr>
@@ -960,7 +980,7 @@ const SearchPage = () => {
                                                                     </tr>
                                                                 ))}
                                                                 <tr>
-                                                                    <td className="py-2 px-4 font-semibold bg-gray-100">Total</td>
+                                                                    <td className="py-2 px-4 font-semibold bg-gray-100">{contentData.TOTAL}</td>
                                                                     <td className="py-2 px-4">{(+value.totalPercent / 2).toString()}%</td>
                                                                     <td className="py-2 px-4">{item.after + item.before} {item.symbol}</td>
                                                                 </tr>
@@ -982,17 +1002,17 @@ const SearchPage = () => {
                                                             </thead>
                                                             <tbody key={index}>
                                                                 <tr>
-                                                                    <td className="py-2 px-4 font-semibold bg-gray-100 whitespace-nowrap">Contract Address</td>
+                                                                    <td className="py-2 px-4 font-semibold bg-gray-100 whitespace-nowrap">{contentData.CONTRACT_ADDRESS}</td>
                                                                     <td className="py-2 px-4" colSpan={2}>{item.contractAddress}</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td className="py-2 px-4 font-semibold bg-gray-100" rowSpan={2}>{item.symbol}</td>
-                                                                    <td className="py-2 px-4 font-semibold">Token ID</td>
+                                                                    <td className="py-2 px-4 font-semibold">{contentData.TOKEN_ID}</td>
                                                                     <td className="py-2 px-4">{item.nftId}</td>
                                                                 </tr>
                                                                 <tr className="bg-gray-100">
-                                                                    <td className="py-2 px-4 font-semibold">Destination</td>
-                                                                    <td className="py-2 px-4">Challenger</td>
+                                                                    <td className="py-2 px-4 font-semibold">{contentData.DESTINATION}</td>
+                                                                    <td className="py-2 px-4">{contentData.CHALLENGER}</td>
                                                                 </tr>
                                                             </tbody>
                                                         </>
@@ -1012,16 +1032,16 @@ const SearchPage = () => {
                                     <thead className="bg-blue-500 text-white">
                                         <tr>
                                             <th scope="col" className="px-8 py-4 text-center text-xl font-bold font-medium uppercase tracking-wider">
-                                                Contract Address
+                                                {contentData.CONTRACT_ADDRESS}
                                             </th>
                                             <th scope="col" className="px-8 py-4 text-center text-xl font-bold uppercase tracking-wider">
-                                                Sponsor
+                                                {contentData.SPONSOR}
                                             </th>
                                             <th scope="col" className="px-8 py-4 text-center text-xl font-bold uppercase tracking-wider">
-                                                Challenger
+                                                {contentData.CHALLENGER}
                                             </th>
                                             <th scope="col" className="px-8 py-4 text-center text-xl font-bold uppercase tracking-wider">
-                                                Details
+                                                {contentData.DETAIL}
                                             </th>
                                         </tr>
                                     </thead>
@@ -1036,7 +1056,7 @@ const SearchPage = () => {
                                                         onClick={(e: React.MouseEvent<HTMLButtonElement>) => setIsDetailPcv(row.contractAddress, Number(row.networkId))}
                                                         className=" bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                                                     >
-                                                        Details
+                                                        {contentData.DETAIL}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -1050,17 +1070,17 @@ const SearchPage = () => {
                                     onClick={handlePrevPage}
                                     disabled={currentPage === 0}
                                 >
-                                    Previous
+                                    {contentData.PREVIOUS}
                                 </button>
                                 <span className="px-4 py-2">
-                                    Page {currentPage + 1} of {totalPages}
+                                    {contentData.PAGE} {currentPage + 1} {contentData.OF} {totalPages}
                                 </span>
                                 <button
                                     className="px-4 py-2 mx-1 bg-gray-200 hover:bg-gray-300 rounded"
                                     onClick={handleNextPage}
                                     disabled={currentPage === totalPages - 1}
                                 >
-                                    Next
+                                    {contentData.NEXT}
                                 </button>
                             </div>
                         </>
@@ -1079,7 +1099,7 @@ const SearchPage = () => {
                                     <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                                     </svg>
-                                    <span className="sr-only">Close modal</span>
+                                    <span className="sr-only">{contentData.CLOSE_MODAL}</span>
                                 </button>
                                 <div className="p-6 text-center">
                                     <svg className="mx-auto mb-4 text-gray-400 w-14 h-14 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1091,7 +1111,7 @@ const SearchPage = () => {
                                         className="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-2"
                                         onClick={hideModal}
                                     >
-                                        Yes, I&apos;m sure and re-check
+                                        {contentData.CONFIRM_ERROR}
                                     </button>
 
                                 </div>
